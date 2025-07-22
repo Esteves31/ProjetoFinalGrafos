@@ -612,7 +612,7 @@ def find_kspanning_trees(vertices, arestas, arestas_abrangencia, k):
         if len(spanning_trees) >= k:
             break
 
-        u, v = new_edge
+        u, v, _ = new_edge
 
         temp_adj_copy = {node: neighbors[:] for node, neighbors in temp_graph_adj.items()}
 
@@ -627,7 +627,7 @@ def find_kspanning_trees(vertices, arestas, arestas_abrangencia, k):
         cycle = find_cycle(temp_adj_copy, u, None, visited, path)
 
 
-        if cycle and new_edge in cycle or (v,u) in cycle:
+        if cycle and (new_edge in cycle or (v, u) in cycle):
 
             cycle_edges = set()
             for i in range(len(cycle) - 1):
