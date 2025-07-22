@@ -1,3 +1,5 @@
+import csv
+import os
 import pickle
 from graph_utils import print_keys
 
@@ -46,9 +48,9 @@ def carregar_grafos(grafos, num_grafos):
     }
 
 def carregar_grafos_salvos():
-    arquivo_salvo = input("Digite o caminho do arquivo: ")
+    arquivo_salvo = input("Digite o nome do arquivo: ")
 
-    with open(arquivo_salvo, "rb") as gfs_pkl:
+    with open(f'.\\resources\\grafos_salvos\\{arquivo_salvo}.pkl', "rb") as gfs_pkl:
         grafos_salvos = pickle.load(gfs_pkl)
 
     print("Grafos carregados com sucesso!")
@@ -68,7 +70,38 @@ def salvar_grafos(grafos, num_grafos):
         'num_grafos': num_grafos
     }
     salvar_grafo = input("Digite o caminho que deseja salvar os grafos: ")
-    with open(salvar_grafo, "wb") as gfs:
+    with open(f'resources/grafos_salvos/{salvar_grafo}.pkl', "wb") as gfs:
         pickle.dump(grafos_salvos, gfs)
 
     print("Grafos salvos!")
+
+def salvar_grafo_em_csv(nome_grafo, vertices, arestas):
+    pasta = os.path.join("resources", nome_grafo)
+    os.makedirs(pasta, exist_ok=True)
+
+    with open(os.path.join(pasta, "vertices.csv"), mode="w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Label", "ID"])
+        for i, v in enumerate(vertices, 1):
+            writer.writerow([v, i])
+
+
+    with open(os.path.join(pasta, "arestas.csv"), mode="w", newline='', encoding='utf-8') as file:
+        writer = csv.writer(file, delimiter=";")
+        writer.writerow(["Source", "Target", "Type", "Weight", "Label"])
+        for a in arestas:
+            u, v, label = a
+            writer.writerow([u, v, label, 1, label])
+
+    print(f"Grafo '{nome_grafo}' salvo em 'resources/{nome_grafo}/'")
+
+def exportar_grafos(grafos: dict):
+    qtdn = int(input(f"Quantos grafos você vai querar exportar ({len(grafos)}): "))
+    if qtdn == len(grafos):
+        for grafo in grafos:
+            salvar_grafo_em_csv(grafo, grafos[grafo]["Vertices"], grafos[grafo]["Arestas"] )
+    else:
+        print_keys(grafos)
+        for i in range(qtdn):
+            g = input(f"{i+1}: Digite o nome do grafo que deseja exportar: ")
+            salvar_grafo_em_csv(g, grafos[g]["Vertices"], grafos[g]["Arestas"])

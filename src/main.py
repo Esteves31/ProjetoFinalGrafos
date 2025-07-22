@@ -1,18 +1,9 @@
-from file_utils import carregar_grafos, carregar_grafos_salvos, mostrar_grafos_carregados, salvar_grafos
+from file_utils import carregar_grafos, carregar_grafos_salvos, exportar_grafos, mostrar_grafos_carregados, salvar_grafos
 from graph_utils import adjacentes_lst, build_adjacency_list, build_incidence_matrix, calcula_distancia_arestas, caminho_simples_bfs_lst, ciclo_em_v_bfs, construir_matriz_adjacencia, diferenca_simetrica, excentricidade_todos_vertices, existe_aresta_lst, find_kspanning_trees, find_tree_centers, fundir_vertices, graph_from_adjacency_list, grau_lst, graus_lst, held_karp_hamiltonian_from_list, intersecao, is_eulerian_from_list, is_spanning_tree, is_subgraph, is_tree, is_tree_from_list, n_arestas_lst, n_vertices_lst, plot_graph, print_keys, print_matriz, raio_arvore, remover_aresta, remover_vertice, uniao, é_subgrafo_bfs_lst
 
 
 def menu():
     print("Bem-vindo ao Gerador de Grafos!")
-    # arquivo_vertices = input("Caminho do arquivo de vértices (nodes.csv): ")
-    # arquivo_arestas = input("Caminho do arquivo de arestas (edges.csv): ")
-    # arquivo_vertices = '.\\nodes_teste.csv'
-    # arquivo_arestas = '.\\edges_teste.csv'
-    # nodes = ler_vertices(arquivo_vertices)
-    # edges = ler_arestas(arquivo_arestas)
-    # A = construir_matriz_adjacencia(nodes, edges)
-    # M = build_incidence_matrix(nodes, edges)
-    # L = build_adjacency_list(nodes, edges)
     grafos = dict()
     num_grafos = 0
     while True:
@@ -35,7 +26,15 @@ def menu():
             elif opc_carregar == '2':
                grafos, num_grafos = carregar_grafos_salvos()
         elif opc == '2':
-            salvar_grafos(grafos, num_grafos)
+            print("\nOpções para salvar:")
+            print("\t1) Salvar em .pkl")
+            print("\t2) Exportar para todos os grafos para .csv")
+            print("\t3) Voltar")
+            op = input("Digite a opção desejada: ")
+            if op == '1':
+                salvar_grafos(grafos, num_grafos)
+            elif op == "2":
+                exportar_grafos(grafos)
         elif opc == '3':
             print("\nPossiveis vizualizações:")
             print("\t1) Ver grafos carregados")
@@ -357,7 +356,8 @@ def menu():
                 print_keys(grafos)
                 a = input()
                 if is_tree(grafos[a]['Vertices'], grafos[a]["Arestas"]):
-                    result = find_kspanning_trees(grafos[g]['Vertices'], grafos[g]['Arestas'], grafos[a]['Arestas'], 3)
+                    k = int(input("Quantas árvores de abrangência deseja gerar? "))
+                    result = find_kspanning_trees(grafos[g]['Vertices'], grafos[g]['Arestas'], grafos[a]['Arestas'], k)
                     print(f"As árvores de abrangência encontradas foram: \n\t{result}")
                 else:
                     print("A não é uma árvore")
