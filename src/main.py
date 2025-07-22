@@ -324,7 +324,7 @@ def menu():
                 print("Diga qual grafo G deseja verificar: ")
                 print_keys(grafos)
                 g = input()
-                result = is_tree(grafos[g]['Vertices']['Arestas'])
+                result = is_tree(grafos[g]['Vertices'], grafos[g]['Arestas'])
                 print(f"G é uma árvore? {'Sim' if result else 'Não'}")
             
             elif opc_func == "21":
