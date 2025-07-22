@@ -1,3 +1,4 @@
+from itertools import combinations
 import networkx as nx
 import matplotlib.pyplot as plt
 
@@ -340,3 +341,332 @@ def print_keys(grafos):
     if keys:
         for k in keys:
             print(f"-> {k}")
+
+
+def uniao(vertices1, arestas1, vertices2, arestas2):
+    vertices = list(set(vertices1).union(vertices2))
+    arestas = list(set(arestas1).union(arestas2))
+    return vertices, arestas
+
+def intersecao(vertices1, arestas1, vertices2, arestas2):
+    """Retorna a interseção de vértices e arestas usando set, considerando grafos não direcionados."""
+    # Interseção de vértices como set
+    vertices = list(set(vertices1).intersection(vertices2))
+    # Normaliza arestas para ignorar orientação
+    def normalizar(e):
+        u, v, lbl = e
+        return (min(u, v), max(u, v), lbl)
+    set1 = {normalizar(e) for e in arestas1}
+    set2 = {normalizar(e) for e in arestas2}
+    # Interseção dos sets
+    arestas = list(set1.intersection(set2))
+    return vertices, arestas
+
+def diferenca_simetrica(vertices1, arestas1, vertices2, arestas2):
+    vertices = list(set(vertices1).union(vertices2))
+    arestas = list(set(arestas1).symmetric_difference(arestas2))
+    return vertices, arestas
+
+def remover_vertice(vertices, arestas, vi):
+    if vi not in vertices:
+        print(f"Vértice {vi} não existe.")
+        return vertices[:], arestas[:]
+    new_vertices = [v for v in vertices if v != vi]
+    new_arestas = [e for e in arestas if vi not in (e[0], e[1])]
+    return new_vertices, new_arestas
+
+def remover_aresta(vertices, arestas, ei):
+    if ei not in arestas:
+        print(f"Aresta {ei} não existe.")
+        return vertices[:], arestas[:]
+    new_arestas = [e for e in arestas if e != ei]
+    return vertices[:], new_arestas
+
+def fundir_vertices(vertices, arestas, vi, vj):
+    if vi not in vertices or vj not in vertices:
+        print(f"Vértices {vi} e/ou {vj} não existem.")
+        return vertices[:], arestas[:]
+
+    novo = f"{vi}_{vj}"
+    new_vertices = [v for v in vertices if v != vi and v != vj]
+    new_vertices.append(novo)
+
+    new_arestas = set()
+    for a, b, label in arestas:
+        a_new = novo if a == vi or a == vj else a
+        b_new = novo if b == vi or b == vj else b
+        new_arestas.add((a_new, b_new, label))
+    return new_vertices, list(new_arestas)
+
+
+def is_connected(adj_list):
+    visited = set()
+    start = next(iter(adj_list))
+    stack = [start]
+    while stack:
+        node = stack.pop()
+        if node not in visited:
+            visited.add(node)
+            stack.extend(nei for nei, _ in adj_list[node] if nei not in visited)
+    return len(visited) == len(adj_list)
+
+def grau_lst(v, L):
+    return len(L.get(v, []))
+
+def is_eulerian_from_list(adj_list):
+    """Verifica se o grafo (representado por lista de adjacência) é euleriano."""
+    if not is_connected(adj_list):
+        return False
+    return all(grau_lst(v, adj_list) % 2 == 0 for v in adj_list)
+
+def graph_intersection_from_list(L1, L2):
+    intersec = {}
+    for node in L1:
+        if node in L2:
+            viz1 = set((v, lbl) for v, lbl in L1[node])
+            viz2 = set((v, lbl) for v, lbl in L2[node])
+            comuns = viz1 & viz2
+            if comuns:
+                intersec[node] = list(comuns)
+    return intersec
+
+def held_karp_hamiltonian_from_list(adj_list):
+    nodes = list(adj_list.keys())
+    n = len(nodes)
+    node_idx = {node: i for i, node in enumerate(nodes)}
+    idx_node = {i: node for i, node in enumerate(nodes)}
+
+    dp = {}
+
+    for k in range(1, n):
+        if nodes[k] in [v for v, _ in adj_list[nodes[0]]]:
+            dp[(1 << 0) | (1 << k), k] = [0, k]
+
+    for subset_size in range(3, n + 1):
+        for subset in combinations(range(n), subset_size):
+            if 0 not in subset:
+                continue
+            bits = sum(1 << i for i in subset)
+            for k in subset:
+                if k == 0:
+                    continue
+                prev_bits = bits & ~(1 << k)
+                for m in subset:
+                    if m == 0 or m == k:
+                        continue
+                    if (prev_bits, m) in dp and nodes[k] in [v for v, _ in adj_list[nodes[m]]]:
+                        new_path = dp[(prev_bits, m)] + [k]
+                        dp[(bits, k)] = new_path
+
+    full_bits = (1 << n) - 1
+    for k in range(1, n):
+        if (full_bits, k) in dp and nodes[0] in [v for v, _ in adj_list[nodes[k]]]:
+            path = dp[(full_bits, k)] + [0]
+            path_nodes = [nodes[i] for i in path]
+            edges = [(path_nodes[i], path_nodes[i+1]) for i in range(len(path_nodes)-1)]
+            return True, edges
+
+    return False, []
+
+
+def is_subgraph(nodes, edges, subnodes, subedges):
+    sub_adjacency_list = build_adjacency_list(subnodes, subedges)
+    sub_graph = graph_from_adjacency_list(sub_adjacency_list)
+    main_adjacency_list = build_adjacency_list(nodes, edges)
+    main_graph = graph_from_adjacency_list(main_adjacency_list)
+
+    n = len(nodes)
+    m = len(edges)
+    sub_n = len(subnodes)
+    sub_m = len(subedges)
+
+    if sub_n > n or sub_m > m:
+        return False
+
+    for i in range(n - sub_n + 1):
+        for j in range(m - sub_m + 1):
+            subgraph_found = True
+            for k in range(sub_n):
+                if nodes[i + k] not in subnodes:
+                    subgraph_found = False
+                    break
+
+    return subgraph_found
+
+def is_tree_from_list(adj_list):
+    n_vertices = len(adj_list)
+    n_arestas = sum(len(neis) for neis in adj_list.values()) // 2  # grafo não-direcionado
+
+    return is_connected(adj_list) and n_arestas == n_vertices - 1
+
+
+def is_spanning_tree(nodes, edges, tree_nodes, tree_edges):
+    L_tree = build_adjacency_list(tree_nodes, tree_edges)
+    if is_tree_from_list(L_tree):
+        return set(tree_nodes) == set(nodes) and set(tree_edges).issubset(set(edges))
+    return False
+
+def is_tree(nodes, edges):
+    n = len(nodes)
+    m = len(edges)
+
+    if m != n - 1:
+        return False
+
+    if n == 0 or n == 1:
+        return True
+
+    adjacency_list = build_adjacency_list(nodes, edges)
+    visited = set()
+    queue = deque()
+
+    start_node = nodes[0]
+    queue.append(start_node)
+    visited.add(start_node)
+
+    while queue:
+        node = queue.popleft()
+
+        for neighbor in adjacency_list[node]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append(neighbor)
+
+    return len(visited) == n
+
+def find_tree_centers(nodes, edges):
+    """
+    Encontra o(s) centro(s) de uma árvore usando o algoritmo de poda de folhas.
+    Retorna uma lista contendo os IDs dos nós centrais.
+    """
+    n = len(nodes)
+
+    if n <= 2:
+        return nodes
+
+    adj = build_adjacency_list(nodes, edges)
+    degrees = {node: len(adj[node]) for node in nodes}
+
+    # 1. Encontrar a primeira camada de folhas
+    leaves = deque()
+    for node in nodes:
+        if degrees[node] == 1:
+            leaves.append(node)
+
+    # 2. Remover as folhas camada por camada até restarem 1 ou 2 nós
+    remaining_nodes = n
+    while remaining_nodes > 2:
+        leaves_in_this_layer = len(leaves)
+        remaining_nodes -= leaves_in_this_layer
+
+        for _ in range(leaves_in_this_layer):
+            leaf = leaves.popleft()
+            # O vizinho de uma folha é o único elemento em sua lista de adjacência
+            for neighbor in adj[leaf]:
+                degrees[neighbor] -= 1
+                # Se o vizinho se tornou uma nova folha, adicione-o à fila para a próxima camada
+                if degrees[neighbor] == 1:
+                    leaves.append(neighbor)
+
+    centers = list(leaves)
+    return centers
+
+def find_cycle(adj, start_node, parent, visited, path):
+    visited.add(start_node)
+    path.append(start_node)
+
+    for neighbor in adj.get(start_node, []):
+        if neighbor not in visited:
+            result = find_cycle(adj, neighbor, start_node, visited, path)
+            if result:
+                return result
+        elif neighbor != parent and neighbor in path:
+            # Cycle detected
+            cycle_start_index = path.index(neighbor)
+            return path[cycle_start_index:] + [neighbor] # Return the cycle including the start node again
+
+    path.pop() # Backtrack
+    return None
+
+
+#Encontra k árvores de abrangencia diferentes de A1, adicionando uma aresta de G
+#que não está em A1, detectando o ciclo formado, e removendo uma aresta diferente desse ciclo.
+def find_kspanning_trees(vertices, arestas, arestas_abrangencia, k):
+    if not is_spanning_tree(vertices, arestas, vertices, arestas_abrangencia):
+         print("A floresta de abrangência inicial não é válida.")
+         return []
+
+    spanning_trees = []
+    initial_tree_edges = set(arestas_abrangencia)
+    graph_edges = set(arestas)
+
+
+    edges_to_add = list(graph_edges - initial_tree_edges)
+
+    if not edges_to_add:
+        print("Não há arestas para adicionar para formar novas árvores de abrangência.")
+        return []
+
+    temp_graph_adj = build_adjacency_list(vertices, arestas_abrangencia)
+
+    for new_edge in edges_to_add:
+        if len(spanning_trees) >= k:
+            break
+
+        u, v = new_edge
+
+        temp_adj_copy = {node: neighbors[:] for node, neighbors in temp_graph_adj.items()}
+
+        if u in temp_adj_copy and v not in temp_adj_copy[u]:
+             temp_adj_copy[u].append(v)
+        if v in temp_adj_copy and u not in temp_adj_copy[v]:
+             temp_adj_copy[v].append(u)
+
+
+        visited = set()
+        path = []
+        cycle = find_cycle(temp_adj_copy, u, None, visited, path)
+
+
+        if cycle and new_edge in cycle or (v,u) in cycle:
+
+            cycle_edges = set()
+            for i in range(len(cycle) - 1):
+                edge = tuple(sorted((cycle[i], cycle[i+1])))
+                cycle_edges.add(edge)
+
+            edges_in_cycle_and_tree = list(cycle_edges.intersection(initial_tree_edges))
+
+
+            for edge_to_remove in edges_in_cycle_and_tree:
+                if len(spanning_trees) >= k:
+                    break
+
+                new_tree_edges = list(initial_tree_edges - {edge_to_remove} | {new_edge})
+
+
+                if is_spanning_tree(vertices, arestas, vertices, new_tree_edges) and set(new_tree_edges) not in [set(t) for t in spanning_trees]:
+                    spanning_trees.append(new_tree_edges)
+                    print(f"\nFound Spanning Tree {len(spanning_trees)}:")
+                    print(new_tree_edges)
+
+    return spanning_trees
+
+def calcula_distancia_arestas(A1, A2):
+    arestas_a1 = set() # funcao set() gera um array vazio
+    for u in A1:
+        for v in A1[u]:
+            # funcao frozenset() é para evitar duplicata ({u,v} e {v,u} são iguais)
+            arestas_a1.add(frozenset({u, v}))
+
+    arestas_a2 = set()
+    for u in A2:
+        for v in A2[u]:
+            arestas_a2.add(frozenset({u, v}))
+
+    # distância é o número de arestas que estão em A1 mas não em A2, mais as que estão em A2 mas não em A1
+    # funcao symmetric_diference() retorna um array contendo todos os itens nao-repetidos dos dois arrays
+    distancia = len(arestas_a1.symmetric_difference(arestas_a2))
+
+    # dividimos por 2 porque cada aresta não compartilhada foi contada duas vezes (u,v e v,u)
+    return distancia // 2
