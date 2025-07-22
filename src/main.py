@@ -230,7 +230,7 @@ def menu():
                 g2 = input()
                 v1, e1 = grafos[g1]['Vertices'], grafos[g1]['Arestas']
                 v2, e2 = grafos[g2]['Vertices'], grafos[g2]['Arestas']
-                v_diff, e_diff = diferenca_simetrica(e1, e1, e2, e2)
+                v_diff, e_diff = diferenca_simetrica(v1, e1, v2, e2)
                 print("De um nome para o grafo resultante: ")
                 g_result = input()
                 if g_result == '':
@@ -261,6 +261,7 @@ def menu():
                 e = (u, v, lbl)
                 v1, e1 = grafos[g]['Vertices'], grafos[g]['Arestas']
                 v_res, e_res = remover_aresta(v1, e1, e)
+                g_result = input("Digite o nome do novo grafo: ")
                 if g_result == '':
                     g_result = str(num_grafos)
                     num_grafos += 1

@@ -527,7 +527,7 @@ def is_tree(nodes, edges):
     while queue:
         node = queue.popleft()
 
-        for neighbor in adjacency_list[node]:
+        for neighbor, _ in adjacency_list[node]:
             if neighbor not in visited:
                 visited.add(neighbor)
                 queue.append(neighbor)
@@ -562,9 +562,8 @@ def find_tree_centers(nodes, edges):
         for _ in range(leaves_in_this_layer):
             leaf = leaves.popleft()
             # O vizinho de uma folha é o único elemento em sua lista de adjacência
-            for neighbor in adj[leaf]:
+            for neighbor, _ in adj[leaf]:
                 degrees[neighbor] -= 1
-                # Se o vizinho se tornou uma nova folha, adicione-o à fila para a próxima camada
                 if degrees[neighbor] == 1:
                     leaves.append(neighbor)
 
