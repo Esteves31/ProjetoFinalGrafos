@@ -1,4 +1,4 @@
-from file_utils import carregar_grafos, carregar_grafos_salvos, exportar_grafos, mostrar_grafos_carregados, salvar_grafos
+from file_utils import carregar_grafos, carregar_grafos_salvos, excluir_um_grafo, exportar_grafos, mostrar_grafos_carregados, salvar_grafos
 from graph_utils import adjacentes_lst, build_adjacency_list, build_incidence_matrix, calcula_distancia_arestas, caminho_simples_bfs_lst, ciclo_em_v_bfs, construir_matriz_adjacencia, diferenca_simetrica, excentricidade_todos_vertices, existe_aresta_lst, find_kspanning_trees, find_tree_centers, fundir_vertices, graph_from_adjacency_list, grau_lst, graus_lst, held_karp_hamiltonian_from_list, intersecao, is_eulerian_from_list, is_spanning_tree, is_subgraph, is_tree, is_tree_from_list, n_arestas_lst, n_vertices_lst, plot_graph, print_keys, print_matriz, raio_arvore, remover_aresta, remover_vertice, uniao, é_subgrafo_bfs_lst
 
 
@@ -19,12 +19,19 @@ def menu():
             print("\nOpções para carregar:")
             print("\t1) Carregar com .csv")
             print("\t2) Carregar grafos salvos")
-            print("\t3) Voltar")
+            print("\t3) Excluir algum grafo")
+            print("\t4) Voltar")
             opc_carregar = input("Digite a opção desejada: ")
             if(opc_carregar == '1'):
                 carregar_grafos(grafos, num_grafos)
             elif opc_carregar == '2':
-               grafos, num_grafos = carregar_grafos_salvos()
+                print("Digite 'Voltar' para cancelar a operação.")
+                arquivo_salvo = input("Digite o nome do arquivo: ")
+                if arquivo_salvo == 'Voltar': 
+                    continue
+                grafos, num_grafos = carregar_grafos_salvos(arquivo_salvo)
+            elif opc_carregar == '3':
+                grafos = excluir_um_grafo(grafos)
         elif opc == '2':
             print("\nOpções para salvar:")
             print("\t1) Salvar em .pkl")

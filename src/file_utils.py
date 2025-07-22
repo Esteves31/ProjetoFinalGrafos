@@ -6,14 +6,14 @@ from graph_utils import print_keys
 
 def ler_vertices(arquivo_vertices):
     """Lê o arquivo de vértices e retorna uma lista ordenada de IDs."""
-    with open(arquivo_vertices, 'r') as f:
+    with open(f'resources\\{arquivo_vertices}.csv', 'r', encoding='utf-8') as f:
         linhas = f.readlines()[1:]  # Pula o cabeçalho ("label,id")
         nodes = [linha.strip().split(';')[1] for linha in linhas if linha.strip()]  # Pega a coluna ID (índice 1)
     return sorted(nodes)
 
 def ler_arestas(arquivo_arestas):
     """Lê o arquivo de edges e retorna pares (source, target)."""
-    with open(arquivo_arestas, 'r') as f:
+    with open(f'resources\\{arquivo_arestas}.csv', 'r', encoding='utf-8') as f:
         linhas = f.readlines()[1:]  # Pula o cabeçalho ("source,target,type,weight,label")
         edges = [linha.strip().split(';') for linha in linhas if linha.strip()]
         # Pega source, target e label
@@ -23,11 +23,11 @@ def ler_arestas(arquivo_arestas):
 def carregar_grafos(grafos, num_grafos):
     print("Caso não deseje cancelar, digite 'Voltar' a qualquer momento: ")
     
-    arquivo_vertices = input("Caminho do arquivo de vértices (Ex: .\\nodes.csv): ")
+    arquivo_vertices = input("Nome do arquivo de vértices em '.\\resources' (Ex: nodes): ")
     if arquivo_vertices == "Voltar":
         return
     
-    arquivo_arestas = input("Caminho do arquivo de arestas (Ex: .\\edges.csv): ")
+    arquivo_arestas = input("Nome do arquivo de arestas em '.\\resources' (Ex: edges): ")
     if arquivo_arestas == "Voltar":
         return
     
@@ -47,8 +47,7 @@ def carregar_grafos(grafos, num_grafos):
         'Arestas': edges
     }
 
-def carregar_grafos_salvos():
-    arquivo_salvo = input("Digite o nome do arquivo: ")
+def carregar_grafos_salvos(arquivo_salvo):
 
     with open(f'.\\resources\\grafos_salvos\\{arquivo_salvo}.pkl', "rb") as gfs_pkl:
         grafos_salvos = pickle.load(gfs_pkl)
@@ -69,7 +68,12 @@ def salvar_grafos(grafos, num_grafos):
         'grafos': grafos,
         'num_grafos': num_grafos
     }
+    print("Digite 'Voltar' para cancelar a operação.")
     salvar_grafo = input("Digite o caminho que deseja salvar os grafos: ")
+
+    if salvar_grafo == 'Voltar':
+        return
+    
     with open(f'resources/grafos_salvos/{salvar_grafo}.pkl', "wb") as gfs:
         pickle.dump(grafos_salvos, gfs)
 
@@ -95,9 +99,36 @@ def salvar_grafo_em_csv(nome_grafo, vertices, arestas):
 
     print(f"Grafo '{nome_grafo}' salvo em 'resources/{nome_grafo}/'")
 
+def excluir_um_grafo(grafos: dict):
+    if not grafos:
+        print("Nenhum grafo carregado.")
+        return grafos
+
+    print("Qual grafo deseja excluir:")
+    print_keys(grafos)
+    g_excluir = input("Nome do grafo: ")
+
+    if g_excluir not in grafos:
+        print(f"Grafo '{g_excluir}' não encontrado.")
+        return grafos
+
+    confirma = input(f"Tem certeza que deseja excluir o grafo '{g_excluir}'? (s/n): ").lower()
+    if confirma == 's':
+        grafos.pop(g_excluir)
+        print(f"Grafo '{g_excluir}' excluído com sucesso.")
+    else:
+        print("Operação cancelada.")
+    
+    return grafos
+
 def exportar_grafos(grafos: dict):
-    qtdn = int(input(f"Quantos grafos você vai querar exportar ({len(grafos)}): "))
-    if qtdn == len(grafos):
+    print("Digite 'Voltar' para cancelar a operação.")
+    qtdn = (input(f"Quantos grafos você vai querar exportar ({len(grafos)}): "))
+
+    if(qtdn == "Voltar"):
+        return
+    
+    if int(qtdn)== len(grafos):
         for grafo in grafos:
             salvar_grafo_em_csv(grafo, grafos[grafo]["Vertices"], grafos[grafo]["Arestas"] )
     else:
