@@ -4,20 +4,40 @@ from collections import deque
 import networkx as nx
 import matplotlib.pyplot as plt
 
+def get_vertex_id(v):
+    """Extrai o id do vértice, seja tupla, dict ou valor simples."""
+    if isinstance(v, dict):
+        return v['id']
+    elif isinstance(v, (tuple, list)) and len(v) == 2:
+        return v[1]
+    else:
+        return v
+
+def get_vertex_label(v):
+    """Extrai o label do vértice, seja tupla, dict ou valor simples."""
+    if isinstance(v, dict):
+        return v['label']
+    elif isinstance(v, (tuple, list)) and len(v) == 2:
+        return v[0]
+    else:
+        return v
+
+
 # Utilitário para extrair vértices de uma aresta
 def get_vertices(edge):
+    """Retorna os vértices de uma aresta (assume formato (u, v, ...))."""
     return edge[0], edge[1]
 
-# Utilitário para extrair label (se existir)
 def get_label(edge):
-    return edge[2] if len(edge) > 2 else ''
+    """Retorna o label da aresta, se existir."""
+    if len(edge) > 2:
+        return edge[2]
+    return None
 
-# Utilitário para extrair peso (se existir)
 def get_weight(edge):
-    # Procura por um valor numérico após os dois primeiros elementos
-    for x in edge[2:]:
-        if isinstance(x, (int, float)):
-            return x
+    """Retorna o peso da aresta, se existir."""
+    if len(edge) > 3:
+        return edge[3]
     return None
 
 def print_matriz(matriz):
@@ -61,17 +81,30 @@ def build_incidence_matrix(nodes, edges):
     return incidence_matrix
 
 def build_adjacency_list(nodes, edges):
-    adjacency_list = {node: [] for node in nodes}
+    ids = [get_vertex_id(v) for v in nodes]
+    adjacency_list = {vid: [] for vid in ids}
     for edge in edges:
-        source, target = get_vertices(edge)
+        u, v = get_vertices(edge)
+        uid = get_vertex_id(u)
+        vid = get_vertex_id(v)
         label = get_label(edge)
-        if source not in adjacency_list:
-            adjacency_list[source] = []
-        if target not in adjacency_list:
-            adjacency_list[target] = []
-        adjacency_list[source].append((target, label))
-        adjacency_list[target].append((source, label))  # Não direcionado
+        adjacency_list[uid].append((vid, label))
+        adjacency_list[vid].append((uid, label))  # Não direcionado
     return adjacency_list
+
+def build_adjacency_matrix(nodes, edges):
+    ids = [get_vertex_id(v) for v in nodes]
+    n = len(ids)
+    idx = {vid: i for i, vid in enumerate(ids)}
+    matriz = [[0] * n for _ in range(n)]
+    for edge in edges:
+        u, v = get_vertices(edge)
+        uid = get_vertex_id(u)
+        vid = get_vertex_id(v)
+        i, j = idx[uid], idx[vid]
+        matriz[i][j] = 1
+        matriz[j][i] = 1  # Não direcionado
+    return matriz
 
 def construir_lista_adjacencia_peso(vertices, arestas):
     """ Constrói uma lista de adjacência ponderada a partir das arestas.
@@ -603,20 +636,23 @@ def calcula_distancia_arestas(A1, A2):
 
 def prim_mst(vertices, arestas, raiz):
     """
-    vertices: lista de vértices (IDs)
+    vertices: lista de vértices (tupla, dict ou id)
     arestas: lista de tuplas (source, target, label, weight)
-    raiz: vértice inicial (ID)
+    raiz: vértice inicial (tupla, dict ou id)
     Retorna: dict com chaves "Vertices" e "Arestas" no mesmo formato das funções de leitura.
     """
+    # Mapeia id para objeto vértice original (para exportação)
+    id_to_vertex = {get_vertex_id(v): v for v in vertices}
+    raiz_id = get_vertex_id(raiz)
     adj = construir_lista_adjacencia_peso(vertices, arestas)
-    visitados = set([raiz])
+    visitados = set([raiz_id])
     heap = []
     mst_arestas = []
-    mst_vertices = set([raiz])
+    mst_vertices = set([raiz_id])
 
     # Adiciona as arestas iniciais da raiz
-    for viz, peso, label in adj[raiz]:
-        heapq.heappush(heap, (peso, raiz, viz, label))
+    for viz, peso, label in adj[raiz_id]:
+        heapq.heappush(heap, (peso, raiz_id, viz, label))
 
     while heap and len(visitados) < len(vertices):
         peso, u, v, label = heapq.heappop(heap)
@@ -624,12 +660,14 @@ def prim_mst(vertices, arestas, raiz):
             continue
         visitados.add(v)
         mst_vertices.add(v)
-        mst_arestas.append((u, v, label, peso))
+        # Recupera os objetos vértice originais para propagar os labels
+        mst_arestas.append((id_to_vertex[u], id_to_vertex[v], label, peso))
         for viz, p, l in adj[v]:
             if viz not in visitados:
                 heapq.heappush(heap, (p, v, viz, l))
 
+    # Retorna os vértices e arestas no mesmo formato de entrada
     return {
-        "Vertices": sorted(mst_vertices),
+        "Vertices": sorted([id_to_vertex[vid] for vid in mst_vertices], key=get_vertex_id),
         "Arestas": mst_arestas
     }

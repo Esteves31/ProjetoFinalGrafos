@@ -2,30 +2,39 @@ import csv
 import os
 import pickle
 from graph_utils import print_keys
-
+import csv
 
 def ler_vertices(arquivo_vertices):
     """
-    Lê o arquivo de vértices e retorna uma lista ordenada de IDs.
-    Aceita qualquer ordem de colunas, desde que haja uma coluna 'ID' ou 'Id'.
+    Lê o arquivo de vértices e retorna uma lista ordenada de tuplas (label, id).
+    Aceita qualquer ordem de colunas, desde que haja 'label' e 'id' (qualquer capitalização).
     """
-    with open(f'resources\\{arquivo_vertices}.csv', 'r', encoding='utf-8') as f:
+    with open(f'resources\\{arquivo_vertices}.csv', 'r', encoding='utf-8-sig') as f:
         reader = csv.reader(f, delimiter=';')
         cabecalho = next(reader)
-        # Procura 'ID' ou 'Id'
+        # Normaliza para minúsculas
+        cabecalho_lower = [col.lower() for col in cabecalho]
+        print(cabecalho_lower)
         try:
-            idx_id = cabecalho.index('ID')
+            idx_label = cabecalho_lower.index('label')
+            idx_id = cabecalho_lower.index('id')
         except ValueError:
-            idx_id = cabecalho.index('Id')
-        nodes = [linha[idx_id] for linha in reader if linha and len(linha) > idx_id]
-    return sorted(nodes)
+            raise ValueError("Colunas 'label' e/ou 'id' não encontradas no arquivo.")
+        # Armazena tuplas (label, id)
+        vertices = [
+            (linha[idx_label], linha[idx_id])
+            for linha in reader
+            if linha and len(linha) > max(idx_label, idx_id)
+        ]
+        # Ordena por id (ou por label, se preferir)
+        return sorted(vertices, key=lambda x: x[1])
 
 def ler_arestas(arquivo_arestas):
     """
     Lê o arquivo de edges e retorna tuplas (source, target, label, weight),
     independentemente da ordem das colunas.
     """
-    with open(f'resources\\{arquivo_arestas}.csv', 'r', encoding='utf-8') as f:
+    with open(f'resources\\{arquivo_arestas}.csv', 'r', encoding='utf-8-sig') as f:
         reader = csv.reader(f, delimiter=';')
         cabecalho = next(reader)
         # Descobre a posição de cada campo
@@ -127,6 +136,7 @@ def salvar_grafo_em_csv(nome_grafo, vertices, arestas):
     Salva o grafo em dois arquivos CSV: vertices.csv e arestas.csv,
     com cabeçalhos padronizados e todos os campos relevantes.
     """
+    import os, csv
     pasta = os.path.join("resources", nome_grafo)
     os.makedirs(pasta, exist_ok=True)
     # Salva vértices
@@ -134,13 +144,19 @@ def salvar_grafo_em_csv(nome_grafo, vertices, arestas):
         writer = csv.writer(f, delimiter=';')
         writer.writerow(["Label", "ID"])
         for v in vertices:
-            writer.writerow([v, v])  # Label e ID iguais, ajuste se necessário
-    # Salva arestas
+            # Se for dicionário
+            if isinstance(v, dict):
+                writer.writerow([v['label'], v['id']])
+            # Se for tupla/lista
+            elif isinstance(v, (tuple, list)) and len(v) == 2:
+                writer.writerow([v[0], v[1]])
+            else:
+                raise ValueError("Formato de vértice não reconhecido: {}".format(v))
+    # Salva arestas (igual ao seu)
     with open(os.path.join(pasta, "arestas.csv"), mode="w", newline='', encoding='utf-8') as file:
         writer = csv.writer(file, delimiter=";")
         writer.writerow(["Source", "Target", "Type", "Weight", "Label"])
         for a in arestas:
-            # Suporta tuplas (u, v, label, weight)
             if len(a) == 4:
                 u, v, label, weight = a
             elif len(a) == 3:
@@ -148,7 +164,7 @@ def salvar_grafo_em_csv(nome_grafo, vertices, arestas):
                 weight = 1
             else:
                 continue
-            writer.writerow([u, v, "Undirected", weight, label])
+            writer.writerow([u[1], v[1], "Undirected", weight, label])
     print(f"Grafo '{nome_grafo}' salvo em 'resources/{nome_grafo}/'")
 
 def excluir_um_grafo(grafos: dict):
@@ -180,11 +196,11 @@ def exportar_grafos(grafos: dict):
     if(qtdn == "Voltar"):
         return
     
-    if int(qtdn)== len(grafos):
+    if int(qtdn) == len(grafos):
         for grafo in grafos:
             salvar_grafo_em_csv(grafo, grafos[grafo]["Vertices"], grafos[grafo]["Arestas"] )
     else:
         print_keys(grafos)
-        for i in range(qtdn):
+        for i in range(int(qtdn)):
             g = input(f"{i+1}: Digite o nome do grafo que deseja exportar: ")
             salvar_grafo_em_csv(g, grafos[g]["Vertices"], grafos[g]["Arestas"])
