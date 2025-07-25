@@ -391,14 +391,13 @@ def menu():
                 v = input("Qual raiz desejada?")
                 nome_grafo = input("De um nome para o grafo resultante: ")
                 mst = prim_mst(grafos[a1]["Vertices"], grafos[a1]["Arestas"], v)
-                print(mst)
-                # if nome_grafo == '':
-                #     g_result = str(num_grafos)
-                #     num_grafos += 1
-                # grafos[g_result] = {
-                #     'Vertices': v_res,
-                #     'Arestas': e_res
-                # }
+                if nome_grafo == '':
+                    nome_grafo = str(num_grafos)
+                    num_grafos += 1
+                grafos[nome_grafo] = {
+                    'Vertices': mst["Vertices"],
+                    'Arestas': mst["Arestas"]
+                }
 
         elif opc=='5': break
         else: print('Inválido')

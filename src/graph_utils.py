@@ -606,12 +606,13 @@ def prim_mst(vertices, arestas, raiz):
     vertices: lista de vértices (IDs)
     arestas: lista de tuplas (source, target, label, weight)
     raiz: vértice inicial (ID)
-    Retorna: lista de arestas da MST [(u, v, label, weight), ...]
+    Retorna: dict com chaves "Vertices" e "Arestas" no mesmo formato das funções de leitura.
     """
     adj = construir_lista_adjacencia_peso(vertices, arestas)
     visitados = set([raiz])
     heap = []
-    mst = []
+    mst_arestas = []
+    mst_vertices = set([raiz])
 
     # Adiciona as arestas iniciais da raiz
     for viz, peso, label in adj[raiz]:
@@ -622,8 +623,13 @@ def prim_mst(vertices, arestas, raiz):
         if v in visitados:
             continue
         visitados.add(v)
-        mst.append((u, v, label, peso))
+        mst_vertices.add(v)
+        mst_arestas.append((u, v, label, peso))
         for viz, p, l in adj[v]:
             if viz not in visitados:
                 heapq.heappush(heap, (p, v, viz, l))
-    return mst
+
+    return {
+        "Vertices": sorted(mst_vertices),
+        "Arestas": mst_arestas
+    }
