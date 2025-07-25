@@ -1,5 +1,5 @@
 from file_utils import carregar_grafos, carregar_grafos_salvos, excluir_um_grafo, exportar_grafos, mostrar_grafos_carregados, salvar_grafos
-from graph_utils import adjacentes_lst, build_adjacency_list, build_incidence_matrix, calcula_distancia_arestas, caminho_simples_bfs_lst, ciclo_em_v_bfs, construir_matriz_adjacencia, diferenca_simetrica, excentricidade_todos_vertices, existe_aresta_lst, find_kspanning_trees, find_tree_centers, fundir_vertices, graph_from_adjacency_list, grau_lst, graus_lst, held_karp_hamiltonian_from_list, intersecao, is_eulerian_from_list, is_spanning_tree, is_subgraph, is_tree, is_tree_from_list, n_arestas_lst, n_vertices_lst, plot_graph, print_keys, print_matriz, raio_arvore, remover_aresta, remover_vertice, uniao, é_subgrafo_bfs_lst
+from graph_utils import adjacentes_lst, build_adjacency_list, build_incidence_matrix, calcula_distancia_arestas, caminho_simples_bfs_lst, ciclo_em_v_bfs, construir_matriz_adjacencia, diferenca_simetrica, excentricidade_todos_vertices, existe_aresta_lst, find_kspanning_trees, find_tree_centers, fundir_vertices, graph_from_adjacency_list, grau_lst, graus_lst, held_karp_hamiltonian_from_list, intersecao, is_eulerian_from_list, is_spanning_tree, is_subgraph, is_tree, is_tree_from_list, n_arestas_lst, n_vertices_lst, plot_graph, prim_mst, print_keys, print_matriz, raio_arvore, remover_aresta, remover_vertice, uniao, é_subgrafo_bfs_lst
 
 
 def menu():
@@ -105,7 +105,8 @@ def menu():
             print("\t23) Verificar raio")
             print("\t24) Buscar árvores de abrangência")
             print("\t25) Distância entre duas árvores")
-            print("\t26) Voltar")
+            print("\t26) Gerar a árvore geradora mínima com raiz em v")
+            print("\t27) Voltar")
             opc_func = input("Digite a opção desejada: ")
             if opc_func == "1":
                 print('Em qual grafo você deseja realizar as operações:')
@@ -384,7 +385,21 @@ def menu():
                 else:   
                     print("A1 ou A2 não é uma árvore.") 
             elif opc_func == "26":
-                pass
+                print('Qual a árvore A?')
+                print_keys(grafos)
+                a1 = input()
+                v = input("Qual raiz desejada?")
+                nome_grafo = input("De um nome para o grafo resultante: ")
+                mst = prim_mst(grafos[a1]["Vertices"], grafos[a1]["Arestas"], v)
+                print(mst)
+                # if nome_grafo == '':
+                #     g_result = str(num_grafos)
+                #     num_grafos += 1
+                # grafos[g_result] = {
+                #     'Vertices': v_res,
+                #     'Arestas': e_res
+                # }
+
         elif opc=='5': break
         else: print('Inválido')
 

@@ -5,19 +5,62 @@ from graph_utils import print_keys
 
 
 def ler_vertices(arquivo_vertices):
-    """Lê o arquivo de vértices e retorna uma lista ordenada de IDs."""
+    """
+    Lê o arquivo de vértices e retorna uma lista ordenada de IDs.
+    Aceita qualquer ordem de colunas, desde que haja uma coluna 'ID' ou 'Id'.
+    """
     with open(f'resources\\{arquivo_vertices}.csv', 'r', encoding='utf-8') as f:
-        linhas = f.readlines()[1:]  # Pula o cabeçalho ("label,id")
-        nodes = [linha.strip().split(';')[1] for linha in linhas if linha.strip()]  # Pega a coluna ID (índice 1)
+        reader = csv.reader(f, delimiter=';')
+        cabecalho = next(reader)
+        # Procura 'ID' ou 'Id'
+        try:
+            idx_id = cabecalho.index('ID')
+        except ValueError:
+            idx_id = cabecalho.index('Id')
+        nodes = [linha[idx_id] for linha in reader if linha and len(linha) > idx_id]
     return sorted(nodes)
 
 def ler_arestas(arquivo_arestas):
-    """Lê o arquivo de edges e retorna pares (source, target)."""
+    """
+    Lê o arquivo de edges e retorna tuplas (source, target, label, weight),
+    independentemente da ordem das colunas.
+    """
     with open(f'resources\\{arquivo_arestas}.csv', 'r', encoding='utf-8') as f:
-        linhas = f.readlines()[1:]  # Pula o cabeçalho ("source,target,type,weight,label")
-        edges = [linha.strip().split(';') for linha in linhas if linha.strip()]
-        # Pega source, target e label
-        edges = [(linha[0], linha[1], linha[4]) for linha in edges]
+        reader = csv.reader(f, delimiter=';')
+        cabecalho = next(reader)
+        # Descobre a posição de cada campo
+        idx_source = cabecalho.index('Source')
+        idx_target = cabecalho.index('Target')
+        # Label pode não existir, ou estar em qualquer posição
+        try:
+            idx_label = cabecalho.index('Label')
+        except ValueError:
+            idx_label = None
+        # Weight pode não existir
+        try:
+            idx_weight = cabecalho.index('Weight')
+        except ValueError:
+            idx_weight = None
+        edges = []
+        for linha in reader:
+            if not linha or len(linha) < 2:
+                continue
+            # Label
+            label = linha[idx_label] if idx_label is not None and len(linha) > idx_label else ''
+            # Weight
+            if idx_weight is not None and len(linha) > idx_weight:
+                try:
+                    weight = float(linha[idx_weight])
+                except (ValueError, IndexError):
+                    weight = 0.0
+            else:
+                weight = 0.0
+            edges.append((
+                linha[idx_source],
+                linha[idx_target],
+                label,
+                weight
+            ))
     return edges
 
 def carregar_grafos(grafos, num_grafos):
@@ -80,23 +123,32 @@ def salvar_grafos(grafos, num_grafos):
     print("Grafos salvos!")
 
 def salvar_grafo_em_csv(nome_grafo, vertices, arestas):
+    """
+    Salva o grafo em dois arquivos CSV: vertices.csv e arestas.csv,
+    com cabeçalhos padronizados e todos os campos relevantes.
+    """
     pasta = os.path.join("resources", nome_grafo)
     os.makedirs(pasta, exist_ok=True)
-
-    with open(os.path.join(pasta, "vertices.csv"), mode="w", newline="") as f:
-        writer = csv.writer(f)
+    # Salva vértices
+    with open(os.path.join(pasta, "vertices.csv"), mode="w", newline='', encoding='utf-8') as f:
+        writer = csv.writer(f, delimiter=';')
         writer.writerow(["Label", "ID"])
-        for i, v in enumerate(vertices, 1):
-            writer.writerow([v, i])
-
-
+        for v in vertices:
+            writer.writerow([v, v])  # Label e ID iguais, ajuste se necessário
+    # Salva arestas
     with open(os.path.join(pasta, "arestas.csv"), mode="w", newline='', encoding='utf-8') as file:
         writer = csv.writer(file, delimiter=";")
         writer.writerow(["Source", "Target", "Type", "Weight", "Label"])
         for a in arestas:
-            u, v, label = a
-            writer.writerow([u, v, label, 1, label])
-
+            # Suporta tuplas (u, v, label, weight)
+            if len(a) == 4:
+                u, v, label, weight = a
+            elif len(a) == 3:
+                u, v, label = a
+                weight = 1
+            else:
+                continue
+            writer.writerow([u, v, "Undirected", weight, label])
     print(f"Grafo '{nome_grafo}' salvo em 'resources/{nome_grafo}/'")
 
 def excluir_um_grafo(grafos: dict):
