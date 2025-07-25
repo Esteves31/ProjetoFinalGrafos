@@ -22,7 +22,6 @@ def get_vertex_label(v):
     else:
         return v
 
-
 # Utilitário para extrair vértices de uma aresta
 def get_vertices(edge):
     """Retorna os vértices de uma aresta (assume formato (u, v, ...))."""
@@ -50,6 +49,20 @@ def print_adjacency_list(adj):
         label = str(node).ljust(max_label_len)
         if neighbors:
             neigh_str = ", ".join(f"{dest}(lbl={lbl})" for dest, lbl in neighbors)
+        else:
+            neigh_str = "<nenhum>"
+        print(f"{label} -> {neigh_str}")
+
+def print_adjacency_list_peso(adj):
+    # Calcula o maior comprimento de label do nó para alinhamento
+    max_label_len = max(len(str(node)) for node in adj)
+    for node, neighbors in adj.items():
+        label = str(node).ljust(max_label_len)
+        if neighbors:
+            # Espera-se que cada vizinho seja (dest, peso, lbl)
+            neigh_str = ", ".join(
+                f"{dest}(w={peso}, lbl={lbl})" for dest, peso, lbl in neighbors
+            )
         else:
             neigh_str = "<nenhum>"
         print(f"{label} -> {neigh_str}")
@@ -237,6 +250,44 @@ def caminho_simples_bfs_lst(orig, dest, L):
             if nxt not in visited:
                 visited.add(nxt)
                 queue.append((nxt, path + [nxt]))
+    return None
+
+def caminho_menor_peso_dijkstra(orig, dest, L):
+    """
+    L: { (label, id): [ ((label_viz, id_viz), peso, label_aresta), ... ] }
+    orig, dest: id (string ou número)
+    Retorna: (caminho, labels_arestas, peso_total) ou None
+    """
+    # Encontrar o vértice de origem e destino pelas IDs
+    def find_vertex_by_id(id_):
+        for v in L:
+            if v[1] == id_:
+                return v
+        return None
+
+    v_orig = find_vertex_by_id(orig)
+    v_dest = find_vertex_by_id(dest)
+    if v_orig is None or v_dest is None:
+        return None
+
+    heap = [(0, v_orig, [v_orig], [])]  # (peso acumulado, vértice atual, caminho, labels_arestas)
+    visited = set()
+
+    while heap:
+        peso, v, path, labels = heapq.heappop(heap)
+        if v[1] == dest:
+            return path, labels, peso
+        if v in visited:
+            continue
+        visited.add(v)
+        for nxt, peso_aresta, label_aresta in L.get(v, []):
+            if nxt not in visited:
+                heapq.heappush(heap, (
+                    peso + float(peso_aresta),
+                    nxt,
+                    path + [nxt],
+                    labels + [label_aresta]
+                ))
     return None
 
 def caminho_simples_bfs_adj(orig, dest, nodes, A):
@@ -634,40 +685,41 @@ def calcula_distancia_arestas(A1, A2):
     distancia = len(arestas_a1.symmetric_difference(arestas_a2))
     return distancia // 2
 
-def prim_mst(vertices, arestas, raiz):
+def prim_mst_from_list(L, raiz_id):
     """
-    vertices: lista de vértices (tupla, dict ou id)
-    arestas: lista de tuplas (source, target, label, weight)
-    raiz: vértice inicial (tupla, dict ou id)
-    Retorna: dict com chaves "Vertices" e "Arestas" no mesmo formato das funções de leitura.
+    L: { (label, id): [ ((label_viz, id_viz), peso, label_aresta), ... ] }
+    raiz_id: id do vértice inicial (não a tupla, só o id)
+    Retorna: dict com chaves "Vertices" e "Arestas" no mesmo formato das chaves de L.
     """
-    # Mapeia id para objeto vértice original (para exportação)
-    id_to_vertex = {get_vertex_id(v): v for v in vertices}
-    raiz_id = get_vertex_id(raiz)
-    adj = construir_lista_adjacencia_peso(vertices, arestas)
+    # Mapeia id para objeto vértice original (tupla)
+    id_to_vertex = {v[1]: v for v in L}
+    raiz = id_to_vertex.get(raiz_id)
+    if raiz is None:
+        raise ValueError(f"Raiz com id {raiz_id} não encontrada nos vértices.")
+
     visitados = set([raiz_id])
     heap = []
     mst_arestas = []
     mst_vertices = set([raiz_id])
 
     # Adiciona as arestas iniciais da raiz
-    for viz, peso, label in adj[raiz_id]:
-        heapq.heappush(heap, (peso, raiz_id, viz, label))
+    for viz, peso, label in L[raiz]:
+        heapq.heappush(heap, (peso, raiz, viz, label))
 
-    while heap and len(visitados) < len(vertices):
+    while heap and len(visitados) < len(L):
         peso, u, v, label = heapq.heappop(heap)
-        if v in visitados:
+        v_id = v[1]
+        if v_id in visitados:
             continue
-        visitados.add(v)
-        mst_vertices.add(v)
-        # Recupera os objetos vértice originais para propagar os labels
-        mst_arestas.append((id_to_vertex[u], id_to_vertex[v], label, peso))
-        for viz, p, l in adj[v]:
-            if viz not in visitados:
+        visitados.add(v_id)
+        mst_vertices.add(v_id)
+        mst_arestas.append((u, v, label, peso))
+        for viz, p, l in L[v]:
+            if viz[1] not in visitados:
                 heapq.heappush(heap, (p, v, viz, l))
 
-    # Retorna os vértices e arestas no mesmo formato de entrada
+    # Retorna os vértices e arestas no mesmo formato das chaves de L
     return {
-        "Vertices": sorted([id_to_vertex[vid] for vid in mst_vertices], key=get_vertex_id),
+        "Vertices": sorted([id_to_vertex[vid] for vid in mst_vertices], key=lambda x: x[1]),
         "Arestas": mst_arestas
     }

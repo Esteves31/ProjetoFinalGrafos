@@ -1,5 +1,5 @@
 from file_utils import carregar_grafos, carregar_grafos_salvos, excluir_um_grafo, exportar_grafos, mostrar_grafos_carregados, salvar_grafos
-from graph_utils import adjacentes_lst, build_adjacency_list, build_incidence_matrix, calcula_distancia_arestas, caminho_simples_bfs_lst, ciclo_em_v_bfs, construir_matriz_adjacencia, diferenca_simetrica, excentricidade_todos_vertices, existe_aresta_lst, find_kspanning_trees, find_tree_centers, fundir_vertices, graph_from_adjacency_list, grau_lst, graus_lst, held_karp_hamiltonian_from_list, intersecao, is_eulerian_from_list, is_spanning_tree, is_subgraph, is_tree, is_tree_from_list, n_arestas_lst, n_vertices_lst, plot_graph, prim_mst, print_keys, print_matriz, raio_arvore, remover_aresta, remover_vertice, uniao, é_subgrafo_bfs_lst
+from graph_utils import adjacentes_lst, build_adjacency_list, build_incidence_matrix, calcula_distancia_arestas, caminho_menor_peso_dijkstra, caminho_simples_bfs_lst, ciclo_em_v_bfs, construir_lista_adjacencia_peso, construir_matriz_adjacencia, diferenca_simetrica, excentricidade_todos_vertices, existe_aresta_lst, find_kspanning_trees, find_tree_centers, fundir_vertices, graph_from_adjacency_list, grau_lst, graus_lst, held_karp_hamiltonian_from_list, intersecao, is_eulerian_from_list, is_spanning_tree, is_subgraph, is_tree, is_tree_from_list, n_arestas_lst, n_vertices_lst, plot_graph, prim_mst_from_list, print_adjacency_list, print_adjacency_list_peso, print_keys, print_matriz, raio_arvore, remover_aresta, remover_vertice, uniao, é_subgrafo_bfs_lst
 
 
 def menu():
@@ -48,8 +48,9 @@ def menu():
             print("\t2) Ver matriz de Adjacência")
             print("\t3) Ver matriz de Incidência")
             print("\t4) Ver Lista de Adjacência")
-            print("\t5) Plotar grafos")
-            print("\t6) Voltar")
+            print("\t5) Ver Lista de Adjacência com Peso")
+            print("\t6) Plotar grafos")
+            print("\t7) Voltar")
             opc_vizu = input("Digite a opção desejada: ")
             if opc_vizu == '1':
                 mostrar_grafos_carregados(grafos)
@@ -70,8 +71,14 @@ def menu():
                 print_keys(grafos)
                 opc_grafos = input()
                 L = build_adjacency_list(grafos[opc_grafos]['Vertices'], grafos[opc_grafos]['Arestas'])
-                print_matriz(L)
+                print_adjacency_list(L)
             elif opc_vizu == '5':
+                print("\nDigite o nome do grafo que deseja visualizar:")
+                print_keys(grafos)
+                opc_grafos = input()
+                L = construir_lista_adjacencia_peso(grafos[opc_grafos]['Vertices'], grafos[opc_grafos]['Arestas'])
+                print_adjacency_list_peso(L)
+            elif opc_vizu == '6':
                 print("\nDigite o nome do grafo que deseja visualizar:")
                 print_keys(grafos)
                 opc_grafos = input()
@@ -106,7 +113,8 @@ def menu():
             print("\t24) Buscar árvores de abrangência")
             print("\t25) Distância entre duas árvores")
             print("\t26) Gerar a árvore geradora mínima com raiz em v")
-            print("\t27) Voltar")
+            print("\t27) Encontrar caminho entre dois vértices considerando o peso")
+            print("\t28) Voltar")
             opc_func = input("Digite a opção desejada: ")
             if opc_func == "1":
                 print('Em qual grafo você deseja realizar as operações:')
@@ -390,7 +398,8 @@ def menu():
                 a1 = input()
                 v = input("Qual raiz desejada?")
                 nome_grafo = input("De um nome para o grafo resultante: ")
-                mst = prim_mst(grafos[a1]["Vertices"], grafos[a1]["Arestas"], v)
+                L = construir_lista_adjacencia_peso(grafos[a1]["Vertices"], grafos[a1]["Arestas"])
+                mst = prim_mst_from_list(L, v)
                 if nome_grafo == '':
                     nome_grafo = str(num_grafos)
                     num_grafos += 1
@@ -398,6 +407,20 @@ def menu():
                     'Vertices': mst["Vertices"],
                     'Arestas': mst["Arestas"]
                 }
+            elif opc_func == "27":
+                print('Em qual grafo você deseja realizar as operações:')
+                print_keys(grafos)
+                opc_grafos = input()
+                L = construir_lista_adjacencia_peso(grafos[opc_grafos]['Vertices'], grafos[opc_grafos]['Arestas'])
+                orig = input("Vértice de origem: ")
+                dest = input("Vértice de destino: ")
+                caminho = caminho_menor_peso_dijkstra(orig, dest, L)
+                if caminho:
+                    print(f"Caminho simples entre {orig} e {dest}: {caminho}")
+                else:
+                    print("Nenhum caminho encontrado.")
+
+
 
         elif opc=='5': break
         else: print('Inválido')

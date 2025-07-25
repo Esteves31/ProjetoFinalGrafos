@@ -29,34 +29,44 @@ def ler_vertices(arquivo_vertices):
         # Ordena por id (ou por label, se preferir)
         return sorted(vertices, key=lambda x: x[1])
 
-def ler_arestas(arquivo_arestas):
+def ler_arestas(arquivo_arestas, vertices):
     """
-    Lê o arquivo de edges e retorna tuplas (source, target, label, weight),
+    Lê o arquivo de edges e retorna tuplas:
+    ((source_label, source_id), (target_label, target_id), label, weight),
     independentemente da ordem das colunas.
     """
+    # Cria um dicionário para mapear id -> label
+    id_to_label = {id_: label for label, id_ in vertices}
+
     with open(f'resources\\{arquivo_arestas}.csv', 'r', encoding='utf-8-sig') as f:
         reader = csv.reader(f, delimiter=';')
         cabecalho = next(reader)
-        # Descobre a posição de cada campo
-        idx_source = cabecalho.index('Source')
-        idx_target = cabecalho.index('Target')
-        # Label pode não existir, ou estar em qualquer posição
+        # Descobre a posição de cada campo (case-insensitive)
+        cabecalho_lower = [col.lower() for col in cabecalho]
+        idx_source = cabecalho_lower.index('source')
+        idx_target = cabecalho_lower.index('target')
         try:
-            idx_label = cabecalho.index('Label')
+            idx_label = cabecalho_lower.index('label')
         except ValueError:
             idx_label = None
-        # Weight pode não existir
         try:
-            idx_weight = cabecalho.index('Weight')
+            idx_weight = cabecalho_lower.index('weight')
         except ValueError:
             idx_weight = None
+
         edges = []
         for linha in reader:
             if not linha or len(linha) < 2:
                 continue
-            # Label
+            # Pega os ids
+            source_id = linha[idx_source]
+            target_id = linha[idx_target]
+            # Busca os labels
+            source_label = id_to_label.get(source_id, '')
+            target_label = id_to_label.get(target_id, '')
+            # Label da aresta
             label = linha[idx_label] if idx_label is not None and len(linha) > idx_label else ''
-            # Weight
+            # Peso
             if idx_weight is not None and len(linha) > idx_weight:
                 try:
                     weight = float(linha[idx_weight])
@@ -65,8 +75,8 @@ def ler_arestas(arquivo_arestas):
             else:
                 weight = 0.0
             edges.append((
-                linha[idx_source],
-                linha[idx_target],
+                (source_label, source_id),
+                (target_label, target_id),
                 label,
                 weight
             ))
@@ -92,7 +102,7 @@ def carregar_grafos(grafos, num_grafos):
         num_grafos += 1
 
     nodes = ler_vertices(arquivo_vertices)
-    edges = ler_arestas(arquivo_arestas)
+    edges = ler_arestas(arquivo_arestas, nodes)
 
     grafos[nome_grafo] = {
         'Vertices': nodes,
