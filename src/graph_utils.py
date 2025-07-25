@@ -723,3 +723,46 @@ def prim_mst_from_list(L, raiz_id):
         "Vertices": sorted([id_to_vertex[vid] for vid in mst_vertices], key=lambda x: x[1]),
         "Arestas": mst_arestas
     }
+
+def dijkstra_tree_from_list(L, raiz_id):
+    """
+    L: { (label, id): [ ((label_viz, id_viz), peso, label_aresta), ... ] }
+    raiz_id: id do vértice inicial (não a tupla, só o id)
+    Retorna: dict com chaves "Vertices" e "Arestas" no mesmo formato das chaves de L.
+    """
+    id_to_vertex = {v[1]: v for v in L}
+    raiz = id_to_vertex.get(raiz_id)
+    if raiz is None:
+        raise ValueError(f"Raiz com id {raiz_id} não encontrada nos vértices.")
+
+    dist = {vid: float('inf') for vid in id_to_vertex}
+    dist[raiz_id] = 0
+    prev = {}  # vid: (u, label_aresta, peso)
+    heap = [(0, raiz_id)]
+
+    while heap:
+        d, u_id = heapq.heappop(heap)
+        if d > dist[u_id]:
+            continue
+        u = id_to_vertex[u_id]
+        for v, peso, label_aresta in L[u]:
+            v_id = v[1]
+            if dist[v_id] > dist[u_id] + peso:
+                dist[v_id] = dist[u_id] + peso
+                prev[v_id] = (u_id, label_aresta, peso)
+                heapq.heappush(heap, (dist[v_id], v_id))
+
+    # Monta a árvore de caminhos mínimos
+    mst_vertices = set([raiz_id])
+    mst_arestas = []
+    for v_id, (u_id, label_aresta, peso) in prev.items():
+        u = id_to_vertex[u_id]
+        v = id_to_vertex[v_id]
+        mst_vertices.add(v_id)
+        mst_vertices.add(u_id)
+        mst_arestas.append((u, v, label_aresta, peso))
+
+    return {
+        "Vertices": sorted([id_to_vertex[vid] for vid in mst_vertices], key=lambda x: x[1]),
+        "Arestas": mst_arestas
+    }
