@@ -169,6 +169,7 @@ def salvar_grafo_em_csv(nome_grafo, vertices, arestas):
         for a in arestas:
             if len(a) == 4:
                 u, v, label, weight = a
+                label = weight
             elif len(a) == 3:
                 u, v, label = a
                 weight = 1
